@@ -15,12 +15,9 @@ import CFR_training
 reload(CFR_training)
 from CFR_training import *
 
-import CFR_running
-reload(CFR_running)
-from CFR_running import *
-
 class CFR_mayaInterface:
     def __init__(self):
+        self.DEBUG = 1
         None
     
     def addROEfile(self, charName, CVlist, ROE, fileName):
@@ -46,7 +43,13 @@ class CFR_mayaInterface:
             f = open(fileName, 'w')
             import pickle
             pickle.dump(charData, f)
-            f.close()        
+            f.close()     
+        if self.DEBUG==1:
+            print '--- Adding ROE file Done --- '
+            print 'fileName : ', fileName
+            print 'charName : ', charData.charName
+            print 'numCV : ', charData.numCV
+            print 'numROE : ', charData.numROE   
     
     def createAnimFile(self, charName, CVlist, animDataList, frameList, fileName):
         srcAnimData = CFR_animData(charName, CVlist, animDataList, frameList)        
@@ -80,6 +83,40 @@ class CFR_mayaInterface:
                 mc.setAttr(CV, CVdata[cvIdx])
                 mc.setKeyframe(CV)
         f.close()
+        print 'Create Animation File Done'
+        print 'File Name : ', fileName
+        print 'Char Name : ', charName
+        print 'Frame Length : ' ,animData.numFrames
+        print 'Char CV number : ', animData.numCV 
+    
+    def makeMatFromFile(self, fileName):
+        f = open(fileName, 'r')
+        mat = np.arange(0.0)
+        for line in f :
+            dataList = line.split()        
+            tempMat = np.arange(float(len(dataList)))
+            for i in range(len(dataList)) :            
+                tempMat[i] = float(dataList[i])            
+            if mat.size == 0 :
+                mat = tempMat
+            else :
+                mat = np.vstack((mat, tempMat))
+        return mat
+    
+    def DEBUG_dataCompare(self, srcMat, tgtMat):
+        oldSrcMat = self.makeMatFromFile('C:/Users/cimple/Documents/maya/projects/default/data/old_humanROE.txt')
+        oldMalcomMat = self.makeMatFromFile('C:/Users/cimple/Documents/maya/projects/default/data/old_MalcomROE.txt')
+        
+        print 'srcError'
+        for j in range(len(oldSrcMat)):
+            for i in range(len(oldSrcMat[j])):
+                if (abs(oldSrcMat[j][i]-srcMat[j][i])>1e-5) : 
+                    print oldSrcMat[j][i], srcMat[j][i], oldSrcMat[j][i]-srcMat[j][i]
+        print 'tgtError'
+        for j in range(len(oldMalcomMat)):
+            for i in range(len(oldMalcomMat[j])):
+                if (abs(oldMalcomMat[j][i]-tgtMat[j][i])>1e-5) : 
+                    print oldMalcomMat[j][i], tgtMat[j][i], oldMalcomMat[j][i]-tgtMat[j][i]
     
     def createTrainingFile(self, srcFileName, tgtFileName, trainingFileName):
         import pickle
@@ -108,8 +145,8 @@ class CFR_mayaInterface:
         trainDataFile = open(trainDataFileName)
         trainData = pickle.load(trainDataFile)
         
-        cfrr = CFRRun()
-        resultAnimDataList = cfrr.CFR_running(srcAnimData, tgtCharData, trainData)        
+        
+        resultAnimDataList = trainData.rbfTrain.RBFrunning(srcAnimData.animDataList)        
         resultAnimData = CFR_animData(tgtCharData.charName, tgtCharData.CVlist, resultAnimDataList, srcAnimData.frameList)
         
         resultAnimFile = open(resultAnimFileName, 'w')

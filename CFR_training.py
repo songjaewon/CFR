@@ -13,7 +13,7 @@ class RBF :
     def __del__(self) :
         self.reset()
     def reset(self) :
-        self.basisType = 'GAUSSIAN'        
+        self.basisType = 'HARDY'        
         self.lamda = 0.0
         self.numInput = 0
         self.dimInput = 0
@@ -25,17 +25,17 @@ class RBF :
         self.minDist = np.arange(0.0)
         return;
     
-    def buildDistMatrix(self, distMat, inputMat):
+    def buildDistMatrix(self, distMat, inputMat):        
         for i in range(self.numInput) :
             for j in range(self.numInput) :
                 if(i == j) : distMat[i,j] = 0.0
-                else : distMat[i,j] = self.dist(inputMat[i], inputMat[j])       
+                else : distMat[i,j] = self.dist(inputMat[i], inputMat[j])
         for i in range(self.numInput) :
             for j in range(self.numInput) :
-                dmin = float("-inf")
+                dmin = float("inf")
                 if distMat[i,j] < dmin :
                     dmin = distMat[i, j]                    
-                    self.minDist[i] = dmin  
+                    self.minDist[i] = dmin
         return;
     
     def basisFunc(self, i, x2) :
@@ -64,6 +64,7 @@ class RBF :
         self.dimInput = inputMat.shape[1]
         distMat = np.zeros((self.numInput,self.numInput))
         self.minDist = np.zeros(self.numInput)
+               
         self.buildDistMatrix(distMat, inputMat)
         if CFR_trainig_DEBUG : print "Build dist matrix done"
         self.basisMat = np.zeros((self.numInput, self.numInput))
@@ -96,6 +97,7 @@ class RBF :
         self.inputMat = inputMat
         self.buildBasisMatrix(inputMat)
         resultMat = np.zeros((self.numInput, self.dimOutput))
+        
         for i in  range(self.numInput) :
             for j in range(self.dimOutput) :
                 resultMat[i,j] = outputMat[i,j]
@@ -127,5 +129,32 @@ class RBFtrain :
         self.rbfn.setBasisFunction('HARDY')
         self.rbfn.setLamda(0.1)
         self.rbfn.train(srcROE, tgtROE)
+    
+    def RBFrunning(self, srcAnimDataList):
+        resultAnimDataList = []
+        for srcAnimData in srcAnimDataList :
+            result = self.rbfn.interpolate(srcAnimData)
+            resultAnimDataList.append(result)
+        return resultAnimDataList
+        
+        
+#        
+#    def RBF_interpolate(self, srcInput, trainData, numTargetCV):
+#        rSrcInput = np.zeros(trainData.rbfTrain.rbfn.numInput)
+#        for i in range(len(rSrcInput)) :
+#            rSrcInput[i] = self.basisFunc(i, self.dist(srcInput, trainData.rbfTrain.rbfn.inputMat[i]))
+#        resultMat = np.dot(rSrcInput, trainData.weightMat)
+#        result = np.zeros(numTargetCV)        
+#        for i in range(numTargetCV) :            
+#            result[i] = resultMat[i]        
+#        return result
+#    
+#    def CFR_running(self, srcAnimData, tgtCharData, trainData):
+#        numTargetCV = tgtCharData.numCV
+#        resultAnimDataList = []
+#        for i in range(len(srcAnimData.animDataList)):
+#            out = self.RBF_interpolate(srcAnimData.animDataList[i], trainData, numTargetCV)
+#            resultAnimDataList.append(out)
+#        return resultAnimDataList
           
         
